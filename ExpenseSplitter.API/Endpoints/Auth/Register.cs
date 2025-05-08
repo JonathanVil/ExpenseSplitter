@@ -5,7 +5,7 @@ using FastEndpoints;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
-namespace ExpenseSplitter.API.Endpoints.Users;
+namespace ExpenseSplitter.API.Endpoints.Auth;
 
 public record RegisterRequest(string Email, string Password);
 

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 
-namespace ExpenseSplitter.API.Endpoints.Users;
+namespace ExpenseSplitter.API.Endpoints.Auth;
 
 
 public class MeEndpoint : EndpointWithoutRequest

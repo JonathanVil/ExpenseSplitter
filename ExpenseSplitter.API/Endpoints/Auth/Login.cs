@@ -5,7 +5,7 @@ using FastEndpoints;
 using FastEndpoints.Security;
 using Microsoft.EntityFrameworkCore;
 
-namespace ExpenseSplitter.API.Endpoints.Users;
+namespace ExpenseSplitter.API.Endpoints.Auth;
 
 public record LoginRequest(string Email, string Password);
 public record LoginResponse(string Token, Guid UserId);
