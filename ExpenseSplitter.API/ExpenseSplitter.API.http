@@ -1,6 +1,30 @@
-@ExpenseSplitter.API_HostAddress = http://localhost:5200
+@HostAddress = http://localhost:5200
 
-GET {{ExpenseSplitter.API_HostAddress}}/weatherforecast/
+### Register
+POST {{HostAddress}}/register
+Content-Type: application/json
+
+{
+  "email": "test@abc.com",
+  "password": "abcdef"
+}
+
+### Login
+POST {{HostAddress}}/login
+Content-Type: application/json
 Accept: application/json
+
+{
+  "email": "test@abc.com",
+  "password": "abcdef"
+}
+
+> {% client.global.set("auth_token", response.body.token); %}
+
+### Logged in
+GET {{HostAddress}}/me
+Authorization: Bearer {{auth_token}}
+
+
 
 ###
