@@ -9,6 +9,10 @@ public class AppDbContext : DbContext
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<ExpenseSplit> ExpenseSplits => Set<ExpenseSplit>();
 
+    public AppDbContext(DbContextOptions options) : base(options)
+    {
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
