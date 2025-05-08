@@ -18,6 +18,8 @@ public class AppDbContext : DbContext
         {
             entity.Property(e => e.Email).IsRequired();
             entity.Property(e => e.PasswordHash).IsRequired();
+            
+            entity.HasIndex(e => e.Email).IsUnique();
         });
         
         // Configure Expense entity
