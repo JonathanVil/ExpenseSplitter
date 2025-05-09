@@ -25,6 +25,21 @@ Accept: application/json
 GET {{HostAddress}}/me
 Authorization: Bearer {{auth_token}}
 
+### Create expense
+POST {{HostAddress}}/expenses
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+Accept: application/json
 
+{
+  "title": "Lunch sandwich",
+  "amount": 50,
+  "splits": {
+    "abc": 51
+  }
+}
 
-###
+### List expenses
+GET {{HostAddress}}/expenses
+Authorization: Bearer {{auth_token}}
+Accept: application/json
