@@ -25,40 +25,80 @@ Accept: application/json
 GET {{HostAddress}}/me
 Authorization: Bearer {{auth_token}}
 
+### Create group
+POST {{HostAddress}}/group
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "Croatia Trip ⛱️"
+}
+
+> {% client.global.set("group_id", response.body.id); %}
+
+### List groups
+GET {{HostAddress}}/group
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### Get group
+GET {{HostAddress}}/group/{{group_id}}
+Authorization: Bearer {{auth_token}}
+Accept: application/json
+
+### Delete group
+DELETE {{HostAddress}}/group/{{group_id}}
+Authorization: Bearer {{auth_token}}
+
+### Add member
+POST {{HostAddress}}/group/{{group_id}}/members
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "userEmail": "HEJ@abc.com"
+}
+
+### Remove member
+DELETE {{HostAddress}}/group/{{group_id}}/members
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "userEmail": "HEJ@abc.com"
+}
+
 ### Create expense
-POST {{HostAddress}}/expenses
+POST {{HostAddress}}/group/{{group_id}}/expenses
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 Accept: application/json
 
 {
   "title": "Lunch sandwich",
-  "amount": 50,
-  "splits": {
-    "{{$random.uuid}}": 50
-  }
+  "amount": 50
 }
 
 ### Create expense with invalid splits
-POST {{HostAddress}}/expenses
+POST {{HostAddress}}/group/{{group_id}}/expenses
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "title": "",
+  "title": "Lunch ??? very expensive",
   "amount": 50,
-  "splits": {
-    "{{$random.uuid}}": 2345
+  "shares": {
+    "0196b5d2-ea99-72f1-b7dd-80337c9ccbdd": 4
   }
 }
 
 ### List expenses
-GET {{HostAddress}}/expenses
+GET {{HostAddress}}/group/{{group_id}}/expenses
 Authorization: Bearer {{auth_token}}
 Accept: application/json
 
 ### Delete expense
-@expense_id = 0196b1f2-d1c2-7629-b818-fed1ff076925
-DELETE {{HostAddress}}/expenses/{{expense_id}}
+@expense_id = 0196b633-d771-7838-bf40-44997b58bf01
+DELETE {{HostAddress}}/group/{{group_id}}/expenses/{{expense_id}}
 Authorization: Bearer {{auth_token}}
