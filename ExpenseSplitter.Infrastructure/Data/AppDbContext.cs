@@ -32,6 +32,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Amount).HasPrecision(18, 2);
+
+            entity.HasIndex(e => e.PaidByUserId);
             
             // One-to-many relationship with ExpenseSplits
             entity.HasMany(e => e.Splits)
