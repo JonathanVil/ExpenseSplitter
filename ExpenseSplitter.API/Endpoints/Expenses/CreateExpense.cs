@@ -8,20 +8,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseSplitter.API.Endpoints.Expenses;
 
-public record CreateExpenseRequest(Guid GroupId, string Title, decimal Amount, Dictionary<string, decimal> Participants);
-
-public record CreateExpenseRequestWithEqualSplit : CreateExpenseRequest
+public record CreateExpenseRequest(Guid GroupId, string Title, decimal Amount)
 {
-    public CreateExpenseRequestWithEqualSplit(Guid GroupId, string Title, decimal Amount, HashSet<string> participants) : base(GroupId, Title, Amount, participants.ToDictionary(u => u, _ => Amount / participants.Count))
-    {
-    }
+    public List<Guid>? Participants { get; init; }
+    public Dictionary<Guid, decimal>? Shares { get; init; }
 }
 
 public record CreateExpenseResponse(Guid ExpenseId);
 
 public class CreateExpenseRequestValidator : Validator<CreateExpenseRequest>
 {
-    
     public CreateExpenseRequestValidator()
     {
         RuleFor(x => x.Title)
@@ -36,18 +32,14 @@ public class CreateExpenseRequestValidator : Validator<CreateExpenseRequest>
             .LessThanOrEqualTo(1000000)
             .WithMessage("Amount must be less than or equal to 1,000,000");
 
-        RuleFor(x => x.Participants)
+        RuleForEach(x => x.Participants)
             .NotEmpty()
-            .WithMessage("Splits are required");
+            .WithMessage("All Participants must be valid User IDs");
 
-        RuleForEach(x => x.Participants.Keys)
-            .IsValidGuid()
-            .WithMessage("All 'Splits' keys must be valid User IDs");
-        
-        RuleFor(x => x.Participants)
-            .Must((request, splits) => splits.Values.Sum() == request.Amount)
-            .WithMessage("The sum of all splits must equal the total amount");
-
+        RuleFor(x => x.Shares)
+            .Must((request, shares) => shares!.Values.Sum() <= request.Amount)
+            .When(x => x.Shares != null)
+            .WithMessage("The sum of all shares cannot exceed the total amount");
     }
 }
 
@@ -78,32 +70,68 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
             ThrowError("Group not found", StatusCodes.Status404NotFound);
             return;
         }
-        
+
         var user = group.Members.FirstOrDefault(u => u.Id == userId);
         if (user == null)
         {
             ThrowError("You are not a member of that group", StatusCodes.Status403Forbidden);
             return;
         }
-        
-        // Create splits
-        var participants = new List<ExpenseParticipant>();
-        foreach (var split in req.Participants)
+
+        // Get users that participate in the expense
+        var users = new List<User>();
+        if (req.Participants == null)
         {
-            var payer = await _db.Users.FindAsync([Guid.Parse(split.Key)], ct);
-            if (payer == null)
+            users = group.Members.ToList();
+        }
+        else
+        {
+            users = group.Members.Where(u => req.Participants.Contains(u.Id)).ToList();
+
+            if (req.Participants.Count > users.Count)
             {
-                ThrowError($"User with ID {split.Key} not found", StatusCodes.Status404NotFound);
+                ThrowError("One or more participants are not members of that group", StatusCodes.Status400BadRequest);
                 return;
             }
-            
-            var participant = new ExpenseParticipant
+        }
+
+        // Check if any of the shares are not members of the group
+        if (req.Shares != null && req.Shares.Keys.Any(u => users.All(x => x.Id != u)))
+        {
+            ThrowError("One or more participants are not members of that group", StatusCodes.Status400BadRequest);
+            return;
+        }
+
+        // Create the parts of the expense
+        var participants = new List<ExpenseParticipant>();
+        var standardShare = req.Amount / users.Count - (req.Shares?.Values.Sum() ?? 0);
+        foreach (var participant in users)
+        {
+            var shareAmount = req.Shares?.TryGetValue(participant.Id, out var reqShare) is true
+                ? reqShare
+                : standardShare;
+            if (shareAmount <= 0)
             {
-                User = payer,
-                UserId = Guid.Parse(split.Key),
-                OwedAmount = split.Value
+                ThrowError("Share amount must be greater than 0", StatusCodes.Status400BadRequest);
+                return;
+            }
+
+            var part = new ExpenseParticipant
+            {
+                OwedAmount = shareAmount,
+                PaidAmount = 0,
+                IsSettled = false,
+                User = participant
             };
-            participants.Add(participant);
+            participants.Add(part);
+        }
+        
+        // Check if the total amount matches the parts of the expense
+        var totalAmount = participants.Sum(p => p.OwedAmount);
+        if (totalAmount != req.Amount)
+        {
+            ThrowError("Total amount does not match the parts of the expense", StatusCodes.Status400BadRequest);
+            return;
         }
 
         // Create expense
@@ -117,7 +145,7 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
             Participants = participants,
             Group = group
         };
-        
+
         await _db.Expenses.AddAsync(expense, ct);
         await _db.SaveChangesAsync(ct);
 

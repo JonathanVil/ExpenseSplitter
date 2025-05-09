@@ -38,13 +38,6 @@ public class RemoveGroupMemberEndpoint : Endpoint<RemoveGroupMemberRequest>
             ThrowError("Group not found", StatusCodes.Status404NotFound);
             return;
         }
-
-        // Check if the user is an admin of the group
-        if (group.Memberships.All(m => m.UserId != userId))
-        {
-            ThrowError("You are not an admin of that group", StatusCodes.Status403Forbidden);
-            return;
-        }
         
         // Check if the user exists
         var member = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.UserEmail, ct);
@@ -54,7 +47,14 @@ public class RemoveGroupMemberEndpoint : Endpoint<RemoveGroupMemberRequest>
             return;
         }
 
-        // Check if the user is already a member of the group
+        // If not removing itself, check if the user is an admin of the group
+        if (userId != member.Id && group.Memberships.All(m => m.UserId != userId && !m.IsAdmin))
+        {
+            ThrowError("You are not an admin of that group", StatusCodes.Status403Forbidden);
+            return;
+        }
+
+        // Check if the user is a member of the group
         var membership = group.Memberships.FirstOrDefault(m => m.UserId == member.Id);
         if (membership == null)
         {
