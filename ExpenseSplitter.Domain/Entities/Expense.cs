@@ -9,6 +9,7 @@ public class Expense : EntityBase
     public Guid PaidByUserId { get; set; }
     
     // Navigation properties
+    public Group Group { get; set; } = null!;
     public List<ExpenseSplit> Splits { get; set; } = [];
     public User PaidByUser { get; set; } = null!;
 }

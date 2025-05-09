@@ -6,6 +6,8 @@ namespace ExpenseSplitter.Infrastructure.Data;
 public class AppDbContext : DbContext
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<Group> Groups => Set<Group>();
+    public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<ExpenseSplit> ExpenseSplits => Set<ExpenseSplit>();
 
@@ -24,6 +26,34 @@ public class AppDbContext : DbContext
             entity.Property(e => e.PasswordHash).IsRequired();
             
             entity.HasIndex(e => e.Email).IsUnique();
+            
+            // Many-to-many relationship with Group
+            entity.HasMany(u => u.Groups)
+                .WithMany(g => g.Members)
+                .UsingEntity<GroupMembership>();
+        });
+        
+        // Configure Group entity
+        modelBuilder.Entity<Group>(entity =>
+        {
+            entity.Property(g => g.Name).IsRequired().HasMaxLength(100);
+            entity.Property(g => g.Description).HasMaxLength(500);
+        });
+        
+        // Configure GroupMembership
+        modelBuilder.Entity<GroupMembership>(entity =>
+        {
+            entity.HasKey(gm => new {gm.UserId, gm.GroupId});
+            
+            entity.HasOne(gm => gm.User)
+                .WithMany(u => u.Memberships)
+                .HasForeignKey(gm => gm.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete conflicts
+            
+            entity.HasOne(gm => gm.Group)
+                .WithMany(g => g.Memberships)
+                .HasForeignKey(gm => gm.GroupId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete conflicts
         });
         
         // Configure Expense entity
