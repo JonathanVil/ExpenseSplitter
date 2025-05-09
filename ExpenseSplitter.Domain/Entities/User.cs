@@ -8,6 +8,7 @@ public class User : EntityBase
     // Navigation properties
     public List<GroupMembership> Memberships { get; set; } = [];
     public List<Group> Groups { get; set; } = [];
-    public List<ExpenseSplit> OwedExpenses { get; set; } = [];
-    public List<ExpenseSplit> PaidExpenses { get; set; } = [];
+    public List<Expense> CreatedExpenses { get; set; } = [];
+    public List<Expense> SharedExpenses { get; set; } = [];
+    public List<ExpenseParticipant> Participations { get; set; } = [];
 }

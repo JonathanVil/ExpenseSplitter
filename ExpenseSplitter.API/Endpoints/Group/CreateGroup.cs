@@ -38,6 +38,12 @@ public class CreateGroupEndpoint : Endpoint<CreateGroupRequest, CreateGroupRespo
     {
         // Get the current user ID from claims
         var userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+        var user = await _db.Users.FindAsync([Guid.Parse(userId)], ct);
+        if (user == null)
+        {
+            ThrowError("User not found", StatusCodes.Status404NotFound);
+            return;
+        }
 
         // Create a new Group entity
         var group = new Domain.Entities.Group
@@ -48,14 +54,14 @@ public class CreateGroupEndpoint : Endpoint<CreateGroupRequest, CreateGroupRespo
         // Create a membership record for the creator
         var membership = new Domain.Entities.GroupMembership
         {
-            UserId = Guid.Parse(userId),
-            GroupId = group.Id,
+            User = user,
+            Group = group,
             IsAdmin = true // Make the creator an admin
         };
 
         // Add both to the database
-        _db.Add(group);
-        _db.Add(membership);
+        _db.Groups.Add(group);
+        _db.GroupMemberships.Add(membership);
 
         await _db.SaveChangesAsync(ct);
 

@@ -54,7 +54,7 @@ public class DeleteExpenseEndpoint : Endpoint<DeleteExpenseRequest>
             return;
         }
 
-        var expense = group.Expenses.FirstOrDefault(x => x.Id == req.ExpenseId && x.PaidByUserId == userId);
+        var expense = group.Expenses.FirstOrDefault(x => x.Id == req.ExpenseId && x.CreatedByUserId == userId);
         if (expense == null)
         {
             ThrowError("Expense not found", StatusCodes.Status404NotFound);

@@ -49,7 +49,7 @@ public class ListExpensesEndpoint : Endpoint<ListExpensesRequest, ListExpensesRe
         }
 
         var dtos = group.Expenses
-            .Where(e => e.PaidByUserId == userId)
+            .Where(e => e.CreatedByUserId == userId)
             .Select(e => new ExpenseDto(
                 e.Id,
                 e.Title,

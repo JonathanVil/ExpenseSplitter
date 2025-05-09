@@ -1,12 +1,13 @@
 namespace ExpenseSplitter.Domain.Entities;
 
-public class ExpenseSplit : EntityBase
+public class ExpenseParticipant
 {
     public Guid ExpenseId { get; set; }
     public Guid UserId { get; set; }
-    public decimal Amount { get; set; }
-    public bool IsPaid => PaidAt != null;
-    public DateTime? PaidAt { get; set; }
+    public decimal OwedAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public bool IsSettled { get; set; }
+    public decimal Balance => PaidAmount - OwedAmount;
     
     // Navigation properties
     public Expense Expense { get; set; } = null!;

@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseSplitter.API.Endpoints.Expenses;
 
-public record CreateExpenseRequest(Guid GroupId, string Title, decimal Amount, Dictionary<string, decimal> Splits);
+public record CreateExpenseRequest(Guid GroupId, string Title, decimal Amount, Dictionary<string, decimal> Participants);
 
 public record CreateExpenseRequestWithEqualSplit : CreateExpenseRequest
 {
-    public CreateExpenseRequestWithEqualSplit(Guid GroupId, string Title, decimal Amount, HashSet<string> users) : base(GroupId, Title, Amount, users.ToDictionary(u => u, _ => Amount / users.Count))
+    public CreateExpenseRequestWithEqualSplit(Guid GroupId, string Title, decimal Amount, HashSet<string> participants) : base(GroupId, Title, Amount, participants.ToDictionary(u => u, _ => Amount / participants.Count))
     {
     }
 }
@@ -36,15 +36,15 @@ public class CreateExpenseRequestValidator : Validator<CreateExpenseRequest>
             .LessThanOrEqualTo(1000000)
             .WithMessage("Amount must be less than or equal to 1,000,000");
 
-        RuleFor(x => x.Splits)
+        RuleFor(x => x.Participants)
             .NotEmpty()
             .WithMessage("Splits are required");
 
-        RuleForEach(x => x.Splits.Keys)
+        RuleForEach(x => x.Participants.Keys)
             .IsValidGuid()
             .WithMessage("All 'Splits' keys must be valid User IDs");
         
-        RuleFor(x => x.Splits)
+        RuleFor(x => x.Participants)
             .Must((request, splits) => splits.Values.Sum() == request.Amount)
             .WithMessage("The sum of all splits must equal the total amount");
 
@@ -87,8 +87,8 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
         }
         
         // Create splits
-        var splits = new List<ExpenseSplit>();
-        foreach (var split in req.Splits)
+        var participants = new List<ExpenseParticipant>();
+        foreach (var split in req.Participants)
         {
             var payer = await _db.Users.FindAsync([Guid.Parse(split.Key)], ct);
             if (payer == null)
@@ -97,13 +97,13 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
                 return;
             }
             
-            var expenseSplit = new ExpenseSplit
+            var participant = new ExpenseParticipant
             {
                 User = payer,
                 UserId = Guid.Parse(split.Key),
-                Amount = split.Value
+                OwedAmount = split.Value
             };
-            splits.Add(expenseSplit);
+            participants.Add(participant);
         }
 
         // Create expense
@@ -113,8 +113,8 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
             Description = null,
             Amount = req.Amount,
             Date = DateTime.UtcNow,
-            PaidByUser = user,
-            Splits = splits,
+            CreatedByUser = user,
+            Participants = participants,
             Group = group
         };
         
