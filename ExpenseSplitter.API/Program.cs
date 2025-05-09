@@ -1,4 +1,3 @@
-using ExpenseSplitter.Infrastructure;
 using ExpenseSplitter.Infrastructure.Data;
 using FastEndpoints;
 using FastEndpoints.Security;
@@ -9,13 +8,13 @@ var bld = WebApplication.CreateBuilder();
 // Add Aspire
 bld.AddServiceDefaults();
 
+bld.AddNpgsqlDbContext<AppDbContext>(connectionName: "postgresdb");
+
 bld.Services
     .AddAuthenticationJwtBearer(s => s.SigningKey = bld.Configuration["Auth:JwtSecret"])
     .AddAuthorization()
     .AddFastEndpoints()
     .SwaggerDocument();
-
-bld.Services.AddInfrastructureServices();
 
 var app = bld.Build();
 app.UseAuthentication()
