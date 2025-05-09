@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using ExpenseSplitter.Domain.Entities;
 using ExpenseSplitter.Infrastructure.Data;
+using ExpenseSplitter.Shared.Utils;
 using FastEndpoints;
 using FluentValidation;
 
@@ -19,6 +20,7 @@ public record CreateExpenseResponse(Guid ExpenseId);
 
 public class CreateExpenseRequestValidator : Validator<CreateExpenseRequest>
 {
+    
     public CreateExpenseRequestValidator()
     {
         RuleFor(x => x.Title)
@@ -36,11 +38,15 @@ public class CreateExpenseRequestValidator : Validator<CreateExpenseRequest>
         RuleFor(x => x.Splits)
             .NotEmpty()
             .WithMessage("Splits are required");
+
+        RuleForEach(x => x.Splits.Keys)
+            .IsValidGuid()
+            .WithMessage("All 'Splits' keys must be valid User IDs");
         
-        // splits must sum to Amount
-        RuleFor(x => x)
-            .Must(x => x.Splits.Values.Sum() == x.Amount)
+        RuleFor(x => x.Splits)
+            .Must((request, splits) => splits.Values.Sum() == request.Amount)
             .WithMessage("The sum of all splits must equal the total amount");
+
     }
 }
 
@@ -65,8 +71,28 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
         var user = await _db.Users.FindAsync(userId, ct);
         if (user == null)
         {
-            ThrowError("User not found");
+            ThrowError("User not found", StatusCodes.Status404NotFound);;
             return;
+        }
+        
+        // Create splits
+        var splits = new List<ExpenseSplit>();
+        foreach (var split in req.Splits)
+        {
+            var payer = await _db.Users.FindAsync(Guid.Parse(split.Key), ct);
+            if (payer == null)
+            {
+                ThrowError($"User with ID {split.Key} not found", StatusCodes.Status404NotFound);
+                return;
+            }
+            
+            var expenseSplit = new ExpenseSplit
+            {
+                User = payer,
+                UserId = Guid.Parse(split.Key),
+                Amount = split.Value
+            };
+            splits.Add(expenseSplit);
         }
 
         // Create expense
@@ -77,11 +103,7 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
             Amount = req.Amount,
             Date = DateTime.UtcNow,
             PaidByUser = user,
-            Splits = req.Splits.Select(s => new ExpenseSplit
-            {
-                UserId = Guid.Parse(s.Key),
-                Amount = s.Value
-            }).ToList()
+            Splits = splits
         };
         
         await _db.Expenses.AddAsync(expense, ct);
