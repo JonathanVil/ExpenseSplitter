@@ -5,6 +5,10 @@ using FastEndpoints.Security;
 using FastEndpoints.Swagger;
 
 var bld = WebApplication.CreateBuilder();
+
+// Add Aspire
+bld.AddServiceDefaults();
+
 bld.Services
     .AddAuthenticationJwtBearer(s => s.SigningKey = bld.Configuration["Auth:JwtSecret"])
     .AddAuthorization()
