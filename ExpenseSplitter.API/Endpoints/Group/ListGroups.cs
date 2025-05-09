@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseSplitter.API.Endpoints.Group;
 
-public record ListGroupsResponse(List<GroupDto> Groups);
+public record ListGroupsResponse(List<GroupListItem> Groups);
 
-public record GroupDto(Guid Id, string Name, string? Description, DateTime CreatedAt, bool IsAdmin);
+public record GroupListItem(Guid Id, string Name, string? Description, DateTime CreatedAt, bool IsAdmin);
 
 public class ListGroupsEndpoint : EndpointWithoutRequest<ListGroupsResponse>
 {
@@ -40,7 +40,7 @@ public class ListGroupsEndpoint : EndpointWithoutRequest<ListGroupsResponse>
         }
 
         var groupDtos = user.Memberships
-            .Select(m => new GroupDto(
+            .Select(m => new GroupListItem(
                 m.Group.Id,
                 m.Group.Name,
                 m.Group.Description,
