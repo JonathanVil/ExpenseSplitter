@@ -9,5 +9,17 @@ declare global {
 		// interface Platform {}
 	}
 }
+// See https://kit.svelte.dev/docs/types#app
+// for information about these interfaces
+declare global {
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		// interface PageData {}
+		// interface Platform {}
+	}
+}
 
+// Make TypeScript happy
+export {};
 export {};
