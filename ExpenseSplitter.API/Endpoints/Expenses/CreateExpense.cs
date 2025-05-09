@@ -68,7 +68,7 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
     public override async Task HandleAsync(CreateExpenseRequest req, CancellationToken ct)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var user = await _db.Users.FindAsync(userId, ct);
+        var user = await _db.Users.FindAsync([userId], ct);
         if (user == null)
         {
             ThrowError("User not found", StatusCodes.Status404NotFound);;
@@ -79,7 +79,7 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
         var splits = new List<ExpenseSplit>();
         foreach (var split in req.Splits)
         {
-            var payer = await _db.Users.FindAsync(Guid.Parse(split.Key), ct);
+            var payer = await _db.Users.FindAsync([Guid.Parse(split.Key)], ct);
             if (payer == null)
             {
                 ThrowError($"User with ID {split.Key} not found", StatusCodes.Status404NotFound);

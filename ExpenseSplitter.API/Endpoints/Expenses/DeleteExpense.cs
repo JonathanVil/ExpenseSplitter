@@ -36,7 +36,7 @@ public class DeleteExpenseEndpoint : Endpoint<DeleteExpenseRequest>
     public override async Task HandleAsync(DeleteExpenseRequest req, CancellationToken ct)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var user = await _db.Users.FindAsync(userId, ct);
+        var user = await _db.Users.FindAsync([userId], ct);
         if (user == null)
         {
             ThrowError("User not found", StatusCodes.Status404NotFound);
