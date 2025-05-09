@@ -6,6 +6,7 @@ public class Expense : EntityBase
     public string? Description { get; set; }
     public required decimal Amount { get; set; }
     public DateTime Date { get; set; }
+    public Guid GroupId { get; set; }
     public Guid PaidByUserId { get; set; }
     
     // Navigation properties

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseSplitter.API.Endpoints.Expenses;
 
-public record DeleteExpenseRequest(Guid ExpenseId);
+public record DeleteExpenseRequest(Guid GroupId, Guid ExpenseId);
 
 public class DeleteExpenseRequestValidator : Validator<DeleteExpenseRequest>
 {
@@ -29,22 +29,32 @@ public class DeleteExpenseEndpoint : Endpoint<DeleteExpenseRequest>
 
     public override void Configure()
     {
-        Delete("/expenses/{ExpenseId}");
+        Delete("/group/{GroupId}/expenses/{ExpenseId}");
         Claims(ClaimTypes.NameIdentifier);
     }
 
     public override async Task HandleAsync(DeleteExpenseRequest req, CancellationToken ct)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var user = await _db.Users.FindAsync([userId], ct);
+
+        var group = await _db.Groups
+            .Include(g => g.Members)
+            .Include(group => group.Expenses)
+            .FirstOrDefaultAsync(g => g.Id == req.GroupId, ct);
+        if (group == null)
+        {
+            ThrowError("Group not found", StatusCodes.Status404NotFound);
+            return;
+        }
+        
+        var user = group.Members.FirstOrDefault(u => u.Id == userId);
         if (user == null)
         {
-            ThrowError("User not found", StatusCodes.Status404NotFound);
+            ThrowError("You are not a member of that group", StatusCodes.Status403Forbidden);
             return;
         }
 
-        var expense = await _db.Expenses
-            .FirstOrDefaultAsync(x => x.Id == req.ExpenseId && x.PaidByUserId == userId, ct);
+        var expense = group.Expenses.FirstOrDefault(x => x.Id == req.ExpenseId && x.PaidByUserId == userId);
         if (expense == null)
         {
             ThrowError("Expense not found", StatusCodes.Status404NotFound);

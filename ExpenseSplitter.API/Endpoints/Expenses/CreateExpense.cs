@@ -4,14 +4,15 @@ using ExpenseSplitter.Infrastructure.Data;
 using ExpenseSplitter.Shared.Utils;
 using FastEndpoints;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseSplitter.API.Endpoints.Expenses;
 
-public record CreateExpenseRequest(string Title, decimal Amount, Dictionary<string, decimal> Splits);
+public record CreateExpenseRequest(Guid GroupId, string Title, decimal Amount, Dictionary<string, decimal> Splits);
 
 public record CreateExpenseRequestWithEqualSplit : CreateExpenseRequest
 {
-    public CreateExpenseRequestWithEqualSplit(string Title, decimal Amount, HashSet<string> users) : base(Title, Amount, users.ToDictionary(u => u, _ => Amount / users.Count))
+    public CreateExpenseRequestWithEqualSplit(Guid GroupId, string Title, decimal Amount, HashSet<string> users) : base(GroupId, Title, Amount, users.ToDictionary(u => u, _ => Amount / users.Count))
     {
     }
 }
@@ -61,17 +62,27 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
 
     public override void Configure()
     {
-        Post("/expenses");
+        Post("/group/{GroupId}/expenses");
         Claims(ClaimTypes.NameIdentifier);
     }
 
     public override async Task HandleAsync(CreateExpenseRequest req, CancellationToken ct)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var user = await _db.Users.FindAsync([userId], ct);
+
+        var group = await _db.Groups
+            .Include(g => g.Members)
+            .FirstOrDefaultAsync(g => g.Id == req.GroupId, ct);
+        if (group == null)
+        {
+            ThrowError("Group not found", StatusCodes.Status404NotFound);
+            return;
+        }
+        
+        var user = group.Members.FirstOrDefault(u => u.Id == userId);
         if (user == null)
         {
-            ThrowError("User not found", StatusCodes.Status404NotFound);;
+            ThrowError("You are not a member of that group", StatusCodes.Status403Forbidden);
             return;
         }
         
@@ -103,7 +114,8 @@ public class CreateExpenseEndpoint : Endpoint<CreateExpenseRequest, CreateExpens
             Amount = req.Amount,
             Date = DateTime.UtcNow,
             PaidByUser = user,
-            Splits = splits
+            Splits = splits,
+            Group = group
         };
         
         await _db.Expenses.AddAsync(expense, ct);
