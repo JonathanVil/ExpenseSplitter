@@ -35,7 +35,21 @@ Accept: application/json
   "title": "Lunch sandwich",
   "amount": 50,
   "splits": {
-    "abc": 51
+    "{{$random.uuid}}": 50
+  }
+}
+
+### Create expense with invalid splits
+POST {{HostAddress}}/expenses
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "",
+  "amount": 50,
+  "splits": {
+    "{{$random.uuid}}": 2345
   }
 }
 
@@ -43,3 +57,8 @@ Accept: application/json
 GET {{HostAddress}}/expenses
 Authorization: Bearer {{auth_token}}
 Accept: application/json
+
+### Delete expense
+@expense_id = 0196b1f2-d1c2-7629-b818-fed1ff076925
+DELETE {{HostAddress}}/expenses/{{expense_id}}
+Authorization: Bearer {{auth_token}}
