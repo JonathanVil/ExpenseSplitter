@@ -24,7 +24,7 @@
           <a href="/register" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
             Get Started
           </a>
-          <a href="/login" class="ml-4 px-8 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-white hover:bg-opacity-10 md:py-4 md:text-lg md:px-10">
+          <a href="/login" class="ml-4 px-8 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-gray-50 hover:text-blue-600 hover:bg-opacity-10 md:py-4 md:text-lg md:px-10">
             Sign In
           </a>
         {/if}

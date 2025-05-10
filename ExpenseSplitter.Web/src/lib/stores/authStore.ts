@@ -23,14 +23,19 @@ interface AuthState {
 
 // Create initial state
 const initialState: AuthState = {
-    user: null,
+    user: browser ? getUserFromToken(localStorage.getItem('token')) : null,
     token: browser ? localStorage.getItem('token') : null,
     isAuthenticated: browser ? !!localStorage.getItem('token') : false,
     isLoading: false
 };
 
-function getClaims(token: string): JwtClaims {
-    return jwtDecode(token);
+function getUserFromToken(token: string | null): User | null {
+    if (!token) return null;
+    const claims = jwtDecode(token) as JwtClaims;
+    return {
+        id: claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+        email: claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
+    };   
 }
 
 // Create the auth store
@@ -45,18 +50,11 @@ function createAuthStore() {
                 localStorage.setItem('userId', userId);
             }
             
-            let claims = getClaims(token);
-            const id = claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-            const email = claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
-
             update(state => ({
                 ...state,
                 token,
                 isAuthenticated: true,
-                user: {
-                    id: userId,
-                    email: email
-                }
+                user: getUserFromToken(token)
             }));
         },
         logout: () => {
