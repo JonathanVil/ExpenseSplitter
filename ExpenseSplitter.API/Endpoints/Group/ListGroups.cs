@@ -7,7 +7,7 @@ namespace ExpenseSplitter.API.Endpoints.Group;
 
 public record ListGroupsResponse(List<GroupListItem> Groups);
 
-public record GroupListItem(Guid Id, string Name, string? Description, DateTime CreatedAt, bool IsAdmin);
+public record GroupListItem(Guid Id, string Name, string? Description, DateTime CreatedAt, bool IsAdmin, List<string> Members);
 
 public class ListGroupsEndpoint : EndpointWithoutRequest<ListGroupsResponse>
 {
@@ -31,6 +31,7 @@ public class ListGroupsEndpoint : EndpointWithoutRequest<ListGroupsResponse>
         var user = await _db.Users
             .Include(u => u.Memberships)
             .ThenInclude(m => m.Group)
+            .ThenInclude(g => g.Members)
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
 
         if (user == null)
@@ -45,7 +46,8 @@ public class ListGroupsEndpoint : EndpointWithoutRequest<ListGroupsResponse>
                 m.Group.Name,
                 m.Group.Description,
                 m.Group.CreatedAt,
-                m.IsAdmin
+                m.IsAdmin,
+                m.Group.Members.Select(u => u.Email).ToList()
             ))
             .ToList();
 

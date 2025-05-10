@@ -38,6 +38,7 @@ export interface GroupListItem {
     description: string | null;
     createdAt: string;
     isAdmin: boolean;
+    members: string[];
 }
 
 /**

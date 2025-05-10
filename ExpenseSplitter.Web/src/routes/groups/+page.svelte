@@ -14,6 +14,7 @@
 
     async function createNew() {
         await createGroup(groupName);
+        showCreateGroupModal = false;
         groupName = '';
     }
 
@@ -37,26 +38,27 @@
                         These are your groups.
                     </div>
 
-                    <button
-                            type="button"
-                            class="my-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            onclick={openModal}>
-                        Create new group
-                    </button>
-
                     {#await groups}
                         <p>...loading</p>
                     {:then groups}
                         <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-
                             {#each groups as group}
                                 <div class="border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
                                     <h4 class="text-lg font-medium text-gray-900">{group.name}</h4>
+                                    <p>{group.description}</p>
+
                                     {#if group.isAdmin}
                                         <p class="text-gray-600">You are an admin of this group</p>
                                     {/if}
-                                    <p>{group.description}</p>
-                                    <p>Members: </p>
+
+                                    <div class="mt-4">
+                                        <h4 class="text-md font-medium text-gray-900">Members</h4>
+                                        <ol>
+                                            {#each group.members as member}
+                                                <li class="text-gray-600">{member}</li>
+                                            {/each}
+                                        </ol>
+                                    </div>
                                 </div>
                             {/each}
                         </div>
@@ -64,6 +66,12 @@
                         <p>Error: {error}</p>
                     {/await}
 
+                    <button
+                            type="button"
+                            class="mt-8 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            onclick={openModal}>
+                        Create new group
+                    </button>
                 </div>
             </div>
         </div>

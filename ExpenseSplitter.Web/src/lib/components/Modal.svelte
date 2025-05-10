@@ -21,7 +21,7 @@
         bind:this={dialog}
         onclose={() => (showModal = false)}
         onclick={(e) => { if (e.target === dialog) dialog.close(); }}
-        class="p-2 max-w-128"
+        class="p-2 max-w-128 rounded-lg"
 >
     <div>
         <div class="mb-4 border-b-2 pb-2 border-b-gray-200">
@@ -63,15 +63,6 @@
         animation: zoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    @keyframes zoom {
-        from {
-            transform: scale(0.95);
-        }
-        to {
-            transform: scale(1);
-        }
-    }
-
     dialog[open]::backdrop {
         animation: fade 0.2s ease-out;
     }
@@ -83,9 +74,5 @@
         to {
             opacity: 1;
         }
-    }
-
-    button {
-        display: block;
     }
 </style>
